@@ -70,8 +70,6 @@ extern uint16_t ILI9341_HEIGHT;
 extern bool gameStarted;
 //---------------------time value for median
 uint32_t last_print = 0;
-
-//---------------------ini resistor /Vref/ADC
 uint8_t dma_spi_fl = 0;
 uint32_t dma_spi_cnt = 1;
 volatile uint16_t adc_data[7];

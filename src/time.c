@@ -1,8 +1,8 @@
 /*
  * time.c
  *
- *  Created on: Sep 25, 2021
- *      Author: sasho
+ *  Created on: 22.02.2024
+ *      Author: Oleksandr Onopriienko
  */
 #include "main.h"
 #include "time.h"
@@ -12,14 +12,20 @@
 
 #include "stm32f4xx_hal.h"
 RTC_HandleTypeDef hrtc;
-//RTC_DateTypeDef GetData;  //Get date structure
-//RTC_TimeTypeDef GetTime;   //Get time structure
 
-char time[10];
-//char date[10];
+char string_buffer_time[10];
+print_time(135, 17,COLOR_WHITE,COLOR_MENU_BAR_DOWN,1,true);
 
-void get_time()
-{
+void print_time(int16_t x, int16_t y,uint16_t time_color,uint16_t time_bg,uint8_t time_size,bool seconds_active){
+get_time();
+if(seconds_active == true){
+ sprintf((char*)string_buffer_time,"%02d:%02d:%02d",gTime.Hours, gTime.Minutes, gTime.Seconds);
+}else{
+  sprintf((char*)string_buffer_time,"%02d:%02d",gTime.Hours, gTime.Minutes);  
+}
+ ILI9341_printText(string_buffer_time, x, y, time_color, time_bg, time_size);
+}
+void get_time(){
  RTC_DateTypeDef gDate;
  RTC_TimeTypeDef gTime;
 /* Get the RTC current Time */
@@ -27,11 +33,6 @@ void get_time()
 /* Get the RTC current Date */
  HAL_RTC_GetDate(&hrtc, &gDate, RTC_FORMAT_BIN);
 /* Display time Format: hh:mm:ss */
- sprintf((char*)time,"%02d:%02d:%02d",gTime.Hours, gTime.Minutes, gTime.Seconds);
- ILI9341_printText(time, 135, 17, COLOR_WHITE, COLOR_MENU_BAR_DOWN, 1);
-/* Display date Format: dd-mm-yy */
- //sprintf((char*)date,"%02d-%02d-%2d",gDate.Date, gDate.Month, 2000 + gDate.Year);
- //ILI9341_printText(date, 30, 45, COLOR_WHITE, COLOR_MENU_BG, 1);
 }
 
 

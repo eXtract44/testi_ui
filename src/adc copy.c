@@ -31,11 +31,48 @@ ADC_CHANNEL_BATTERY;
 };
 volatile uint16_t adc_data_raw[ADC_CHANNEL_QUANTITY];
 
+
+
+//--- creat med filter
 movingMedian_t adc_filter[ADC_CHANNEL_QUANTITY];
 
+//values for position
+extern uint16_t x_pos_button_l;
+extern uint16_t y_pos_button_l; //
 
+extern uint16_t x_pos_button_r; //247
+extern uint16_t y_pos_button_r;
 
+extern uint16_t x_pos_button_c;
+extern uint16_t y_pos_button_c;
 
+extern uint16_t x_pos_batt;
+extern uint16_t y_pos_batt;
+//values for printing
+extern uint16_t frame_val_ystart;
+extern uint16_t frame_val_ysize;
+extern uint16_t frame_val_xstart;
+
+extern uint16_t adc_val_xstart;
+extern uint16_t adc_val_ystart;
+extern uint16_t mess_val_xstart; //
+//other values
+extern uint8_t alarm_ton;
+extern bool status_idle;
+int16_t adc_pt100 = 0; // temp adc value for graphic
+char str[20]; // for string
+extern bool button_pressed; // button status
+extern uint8_t buttons_l_r_status;
+extern uint8_t button_select_status;
+extern uint8_t test_menu;
+//CNTs for menus func
+uint32_t cnt_new_batt = 0;
+uint32_t cnt_old_batt = 0;
+uint16_t cnt_batt = 0;
+uint32_t cnt_new_pt100 = 0;
+uint32_t cnt_old_pt100 = 0;
+uint32_t cnt_new_fault = 0;
+uint32_t cnt_old_fault = 0;
 // read adc in
 bool running = false; // while status
 uint8_t current_main_page = 1; //read ADC
@@ -72,14 +109,10 @@ int16_t yvalue_min = 0;
 uint16_t yvalue_max = 0;
 uint16_t multiply_min_max = 1;
 
-float map_adc(float x, float in_min, float in_max, float out_min, float out_max) {
+float map(float x, float in_min, float in_max, float out_min, float out_max) {
 	return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
-float read_adc_voltage(uint16_t adc_filtred_value){
-	float temp = ((float)adc_filtred_value) * Vref / adcRes;
-	temp = adc_filtred_value / (R2 / (R1 + R2));
-	return temp;
-}
+
 void read_adc_allchannels() {
 	ILI9341_setFont(&Font16);
 	uint16_t xStart = 170;
@@ -149,23 +182,28 @@ void read_adc_allchannels() {
 			COLOR_MENU_BG, 2);
 
 }
-float read_mcu_temperature() {
-	/* Average slope - 2.5
-	Voltage at 25 °C - 0.76*/
-	float temp = (float) adc_filter[ADC_CHANNEL_MCU_TEMPERATURE].filtered * Vref / adcRes;
-	temp = (temp - 0.76) / 0.0025 + 25;
+void read_adc_mcuTemp() {
+	//ILI9341_setFont(&Font16);
+	u[adc_channel_temp] = (float) adc_filter[ADC_CHANNEL_MCU_TEMPERATURE].filtered * Vref / adcRes;
+	u[adc_channel_temp] = (u[adc_channel_temp] - 0.76) / 0.0025 + 25;
+	sprintf(str, "%.1f * ", u[adc_channel_temp]);
+	ILI9341_printText(str, 45, 17, COLOR_WHITE, COLOR_MENU_BAR_DOWN, 1);
+	//temp = ((V25 - (ADC_DATA*Vref/adcRes)) / Avg_Slope) + 25
+	// Average slope - 2.5
+	//Voltage at 25 °C - 0.76
+}
+float read_adc_voltage(uint16_t adc_filtred_value){
+	float temp = ((float)adc_filtred_value) * Vref / adcRes;
+	temp = adc_filtred_value / (R2 / (R1 + R2));
 	return temp;
 }
-int constrtain_int(int input_value,int min,int max){
-int temp = 0;
-if(input_value > max){
-	temp = max;
-}else{
-	temp = min;
-}
-return temp;
-}
-uint8_t read_battery() {
+void print_value_d(int16_t value,char* attribute, int16_t x,int16_t y, uint16_t color_text,
+			uint16_t color_bg, uint8_t text_size){
+sprintf(sting_buffer, attribute, value);
+ILI9341_printText(str, x , y , color_text,
+			color_bg, text_size);
+			}
+void read_adc_battery(uint16_t x, uint16_t y) {
 	/* Datasheet
 	 Overcharge Detection Voltage: 4.25-4.35V±0.05V
 	 Over Discharge Detection Voltage: 2.3-3.0V±0.05V
@@ -173,8 +211,52 @@ uint8_t read_battery() {
 	const float Vmax = 8.405f; // = 100% Battery
 	const float Vmin = 6.0f; // = 0% Battery
 	float battery_charge_precent = ((read_adc_voltage(adc_filter[ADC_CHANNEL_BATTERY].filtered) - Vmin) * (100 / (Vmax - Vmin)));
-	battery_charge_precent=constrtain_int((int)battery_charge_precent ,0,100);
-	return (uint8_t)battery_charge_precent;
+	
+	sprintf(str, "%3d", (uint16_t)battery_charge_precent);
+	if (battery_charge_precent > 0 && battery_charge_precent < 105) { //
+		if (button_select_status == 1 || buttons_l_r_status == 7) {
+			ILI9341_printText(str, x - 20, y + 3, COLOR_GREEN,
+			COLOR_MENU_BAR_DOWN, 1);
+		} else {
+			ILI9341_printText(str, x - 20, y + 3, COLOR_GREEN, COLOR_MENU_BG,
+					1);
+		}
+	}
+	else {
+		ILI9341_printText("LOAD", x_pos_batt+4, y_pos_batt - 22, COLOR_GREEN,
+					COLOR_MENU_BAR_DOWN, 1);
+	}
+	ILI9341_drawRect(x - 1, y - 2, x + 31, y + 13, COLOR_WHITE);
+	ILI9341_drawRect(x + 31, y + 1, x + 33, y + 10, COLOR_WHITE);
+	if (battery_charge_precent >= 10) {
+		ILI9341_fillRect(x + 1, y, x + 5, y + 11, COLOR_GREEN);
+
+	} //20%
+
+	if (battery_charge_precent <= 20) {
+		cnt_batt++;
+		if (cnt_batt > 90) { //1 tick = 10 sec
+			ILI9341_fillRect(x + 1, y, x + 5, y + 11, COLOR_RED);
+			start_buzzer(4);
+			HAL_Delay(1000);
+			start_buzzer(0);
+			ILI9341_fillRect(x + 1, y, x + 5, y + 11, COLOR_GREEN);
+			cnt_batt = 0;
+		}
+
+	}
+	if (battery_charge_precent >= 30) {
+		ILI9341_fillRect(x + 7, y, x + 11, y + 11, COLOR_GREEN);
+	} //40%
+	if (battery_charge_precent >= 50) {
+		ILI9341_fillRect(x + 13, y, x + 17, y + 11, COLOR_GREEN);
+	} //60%
+	if (battery_charge_precent >= 70) {
+		ILI9341_fillRect(x + 19, y, x + 23, y + 11, COLOR_GREEN);
+	} //80%
+	if (battery_charge_precent >= 90) {
+		ILI9341_fillRect(x + 25, y, x + 29, y + 11, COLOR_GREEN);
+	} //100%
 }
 void read_adc_home() {
 	//ILI9341_setFont(&Font20);
