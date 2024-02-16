@@ -8,23 +8,24 @@
 #ifndef INC_BUTTONS_H_
 #define INC_BUTTONS_H_
 
+#define BTN_PORT_LEFT GPIOC
+#define BTN_PIN_LEFT 
 
-void button_up();
-void button_left();
-void button_middle();
-void button_right();
-void button_down();
-void button_fun1();
-void button_fun2();
-void button_fun3();
-void start_vibration();
-void draw_main_menu(uint8_t draw_page);
-void draw_sensor_submenu(uint8_t draw_page);
-void draw_antrieb_submenu(uint8_t draw_page);
-void update_tools_menu();
-void set_settings();
-void write_flash_settings();
-void ini_buttons();
-void buttons_enable(uint8_t status);
-void idle();
+#define BUTTON_LEFT HAL_GPIO_ReadPin(BTN_PORT_LEFT, BTN_PIN_LEFT)
+#define BUTTON_UP HAL_GPIO_ReadPin(GPIOC, BTN_PIN_UP)
+#define BUTTON_MID HAL_GPIO_ReadPin(GPIOC, BTN_PIN_LEFT)
+#define BUTTON_RIGHT HAL_GPIO_ReadPin(GPIOC, BTN_PIN_LEFT)
+#define BUTTON_DOWN HAL_GPIO_ReadPin(GPIOC, BTN_PIN_LEFT)
+
+
+enum buttons{
+BUTTON_LEFT,
+BUTTON_UP,
+BUTTON_MID,
+BUTTON_RIGHT,
+BUTTON_DOWN,
+};
+
+
+
 #endif /* INC_BUTTONS_H_ */

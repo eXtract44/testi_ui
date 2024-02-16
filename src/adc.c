@@ -177,7 +177,6 @@ uint8_t read_battery() {
 	return (uint8_t)battery_charge_precent;
 }
 void read_adc_home() {
-	//ILI9341_setFont(&Font20);
 	start_buzzer(0);
 	draw_button(x_pos_button_l, y_pos_button_l, COLOR_WHITE,
 	COLOR_MENU_BAR_DOWN, "<<");

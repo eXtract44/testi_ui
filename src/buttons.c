@@ -11,117 +11,21 @@
 #include "buttons.h"
 #include "w25qxx.h"
 #include "processing.h"
-//#include "processing.h"
-//#include "pic.c"
 
-extern DAC_HandleTypeDef hdac; //for adc
-//extern uint16_t DacVal;
 
-extern uint8_t page_main_menu;
-extern uint8_t page_sensor_menu;
-extern uint8_t page_antrieb_menu;
-extern uint8_t page_info_menu;
 
-extern uint8_t current_main_page; //read ADC
-extern uint8_t current_sensor_page; //read ADC
-extern uint8_t current_antrieb_page; //read ADC
-extern uint8_t current_info_page; //read ADC
-extern uint8_t current_pt100_page;
 
-extern uint8_t measuring_range_raumregler_aktiv;
-extern uint8_t measuring_range_raumtemp;
-extern uint8_t measuring_range_kanaltemp;
-extern uint8_t measuring_range_feuchte;
-extern uint8_t measuring_range_druckluft;
-extern uint8_t measuring_range_helligkeit;
-extern uint16_t cy_old;
-
-extern uint16_t frame_val_ystart;
-extern uint16_t frame_val_ysize;
-extern uint16_t frame_val_xstart;
-
-extern uint16_t x_pos_button_l;
-extern uint16_t y_pos_button_l;
-extern uint16_t x_pos_button_r;
-extern uint16_t y_pos_button_r;
-extern uint16_t x_pos_button_c;
-extern uint16_t y_pos_button_c;
-
-extern uint16_t cy_old; //cy_oldcl for pt100 graphic
-//values for selfbuild sensor
-extern int16_t yvalue_min;
-extern uint16_t yvalue_max;
-extern uint16_t multiply_min_max;
-//---
-//game
-extern bool button_left_pressed;
-extern bool button_middle_pressed;
-extern bool button_right_pressed;
-//game
-
-extern bool running; //check while doing
-char str[10];
-uint8_t test_menu = 0;
-bool button_pressed = false;
-uint16_t buttons_delay = 400; // butt del mili
-uint8_t buttons_l_r_status = 0; // butt left/right status
-uint8_t button_select_status = 1; // butt select/home status
-uint8_t buttons_l_r_status_settings = 0; // butt left/right status in settings
-uint8_t buttons_up_down_status = 0; // butt left/right status in settings
-uint32_t cnt_new_buttons = 0; //cnt for buttons
-uint32_t cnt_old_buttons = 0;
-uint8_t DacVolt = 0;
-uint8_t secret_menu_cnt = 0;
-
-//---------------------ini values for menu settings
-
-uint8_t flash_write_buffer1[6];
-//uint8_t flash_write_buffer2[8] = {1,2,3,4,5,6,7,8};
-uint8_t flash_read_buffer1[6];
-//uint8_t flash_read_buffer2[8];
-
-//for FLASH
-
-uint32_t cnt_idle = 0;
-
-bool status_idle = false;
-//set para
-
-uint8_t standart_helligkeit_choice;
-uint8_t standart_helligkeit;
-
-uint8_t time_30helligkeit_choice;
-uint16_t time1_idle; //in sec
-
-uint8_t time_0helligkeit_choice;
-uint16_t time2_idle; //in sec
-
-uint8_t time_24VOFF_choice;
-uint16_t time3_idle; //in sec
-
-uint8_t touch_ton_choice;
-uint8_t touch_ton;
-
-uint8_t alarm_ton_choice;
-uint8_t alarm_ton;
-
-void buttons_enable(uint8_t status) {
-	if (status == 0) {
-		HAL_GPIO_WritePin(GPIOC, TOUCH_Pin, GPIO_PIN_SET);
-	}
-	if (status == 1) {
+void buttons_enable() {
 		HAL_GPIO_WritePin(GPIOC, TOUCH_Pin, GPIO_PIN_RESET);
-	}
 }
-void interrupts_enable(uint8_t status) {
-	if (status == 0) {
-		HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
-		HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
+void buttons_disable() {
+		HAL_GPIO_WritePin(GPIOC, TOUCH_Pin, GPIO_PIN_SET);
+}
+uint8_t read_buttons(){
+	if(BUTTON_LEFT){
+		return 
 	}
-	if (status == 1) {
-		HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
-		HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-	}
+	
 }
 
 void button_up() {
