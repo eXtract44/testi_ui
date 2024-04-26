@@ -60,12 +60,6 @@
 #define COLOR_GREENYELLOW     0xAFE5
 #define COLOR_BROWN 		  0XBC40
 
-//#define COLOR_BLUE_MENU		  0x191970
-#define COLOR_MENU_BG         0xc4
-#define COLOR_MENU_BLOCK      0x05FE
-#define COLOR_MENU_BAR_DOWN   0xe9
-#define COLOR_MENU_BUTTON   0x5D28
-
 
 
 

@@ -1,4 +1,9 @@
+
+#include "stdint.h"
+#include "stdbool.h"
+
 #include "menu.h"
+#include "spi_ili9341.h"
 
 extern uint8_t current_pt100_page;
 extern uint16_t cy_old;
@@ -52,12 +57,28 @@ uint16_t delay_menus = 500;
 //-------------------------------------------------------------------
 
 /*******************************/
-#define i16 uint16_t
-#define u16 uint16_t
+
 /*******************************/
-uint8_t drw_btn_raw(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t frame_size, uint16_t color)
+void drw_circle_raw(unsigned int x, unsigned int y, unsigned int r, unsigned int frame_size, uint16_t color, uint16_t color_bg)
 {
-	uint8_t passed = 1;
+	ILI9341_fillCircle(x, y, r, color_bg);
+	for (uint8_t i = 0; i < 3; i++)
+	{
+		ILI9341_drawCircle(x, y, i, color);
+	}
+}
+void drw_frame_raw(unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned int frame_size, uint16_t color, uint16_t color_bg)
+{
+	ILI9341_fillRect(x, y, x + w, y + h, color_bg);
+
+	for (uint8_t i = frame_size; i == 0; i--)
+	{
+		ILI9341_drawRect(frame_size / 2 + x - i, y - i, frame_size / 2 + x + w + i, y + h + i, color);
+	}
+}
+bool drw_btn_raw(unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned int frame_size, uint16_t color, uint16_t color_bg)
+{
+	bool passed = 1;
 	if (w > MAX_WIDTH_SIZE_BTN)
 	{
 		passed = 0;
@@ -75,348 +96,90 @@ uint8_t drw_btn_raw(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t frame
 		passed = 0;
 		frame_size = MAX_FRAME_SIZE_BTN;
 	}
-	for (uint8_t i = 0; i < frame_size; i++)
-	{
-		ILI9341_drawRect(frame_size / 2 + x - i, y - i, frame_size / 2 + x + w + i, y + h + i, color);
-	}
+	drw_frame_raw(x, y, w, h, frame_size, color, color_bg);
 	return passed;
 }
-void drw_btn_char(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t frame_size, uint16_t color,char* text){
-	drw_btn_raw(x, y, w, h,frame_size, color);
-	ILI9341_printText(text, x + 22, y + 8, color, bg, 1);
-}
-void draw_button(uint16_t x, uint16_t y, uint16_t color, uint16_t bg, char *c)
+void drw_btn_text(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t frame_size, uint16_t color, uint16_t color_bg, char *text, uint16_t text_size, uint16_t color_text, uint16_t color_text_bg)
 {
-	for (uint8_t i = 0; i <= 2; i++)
+	if (drw_btn_raw(x, y, w, h, frame_size, color, color_bg) == true)
 	{
-		ILI9341_drawRect(x - i, y - i, x + 53 + i, y + 22 + i, color);
+		switch (text_size)
+		{
+		case 1:
+			ILI9341_printText(text, x + w / 2 - 4, y + h / 2 - 5, color_text, color_text_bg, text_size);
+			break;
+		case 2:
+			ILI9341_printText(text, x + w / 2 - 8, y + h / 2 - 9, color_text, color_text_bg, text_size);
+			break;
+		case 3:
+			ILI9341_printText(text, x + w / 2 - 12, y + h / 2 - 12, color_text, color_text_bg, text_size);
+			break;
+		case default:
+			break;
+		}
 	}
-	ILI9341_printText(c, x + 22, y + 8, color, bg, 1);
+}
+void drw_btn_text_large(int16_t x, int16_t y, uint16_t color, uint16_t color_bg, char *text, uint16_t text_size, uint16_t color_text, uint16_t color_text_bg)
+{
+	drw_btn_char(x, y, BTN_WIDTH_LARGE, BTN_HEIGHT_LARGE, 4, color, color_bg, text, 2, color_text, color_text_bg);
+}
+void drw_btn_text_medium(int16_t x, int16_t y, uint16_t color, uint16_t color_bg, char *text, uint16_t text_size, uint16_t color_text, uint16_t color_text_bg)
+{
+	drw_btn_char(x, y, BTN_WIDTH_MEDIUM, BTN_HEIGHT_MEDIUM, 4, color, color_bg, text, 2, color_text, color_text_bg);
+}
+void drw_btn_text_small(int16_t x, int16_t y, uint16_t color, uint16_t color_bg, char *text, uint16_t text_size, uint16_t color_text, uint16_t color_text_bg)
+{
+	drw_btn_char(x, y, BTN_WIDTH_SMALL, BTN_HEIGHT_SMALL, 4, color, color_bg, text, 2, color_text, color_text_bg);
 }
 //-------------------------------------------------------------------
-void draw_button_helper(uint8_t c)
+void drw_frame_medium(unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned int frame_size, uint16_t color, uint16_t color_bg)
 {
-	uint16_t x_left_tri = x_pos_button_l + 65;
-	uint16_t width_tri = 14;
-	uint16_t x_right_tri = x_pos_button_r - 12 - width_tri;
-	uint16_t hight_tri = width_tri - 2;
-	uint16_t y_tri = y_pos_button_l - 25;
-
-	switch (c)
-	{
-	case 'l':
-		ILI9341_drawTriangle(x_left_tri, y_tri - hight_tri,
-							 x_left_tri + width_tri, y_tri - hight_tri,
-							 x_left_tri + (width_tri / 2), y_tri,
-							 COLOR_WHITE);
-		ILI9341_drawCircle(x_left_tri + (width_tri / 2),
-						   y_tri - (hight_tri / 2), 12, COLOR_WHITE);
-		break;
-	case 'r':
-		ILI9341_drawTriangle(x_right_tri, y_tri, x_right_tri + width_tri, y_tri,
-							 x_right_tri + (width_tri / 2), y_tri - hight_tri,
-							 COLOR_WHITE);
-		ILI9341_drawCircle(x_right_tri + (width_tri / 2),
-						   y_tri - (hight_tri / 2), 12, COLOR_WHITE);
-		break;
-	}
-	draw_button(x_pos_button_l, y_pos_button_l - 43, COLOR_WHITE,
-				COLOR_MENU_BAR_DOWN, "/10");
-	draw_button(x_pos_button_r, y_pos_button_r - 43, COLOR_WHITE,
-				COLOR_MENU_BAR_DOWN, "*10");
+	drw_frame_raw(x, y, FRAME_WIDTH_MEDIUM, FRAME_HEIGHT_MEDIUM, frame_size, color, color_bg);
 }
+void drw_btn_round(unsigned int x, unsigned int y, unsigned int r, unsigned int frame_size, uint16_t color, uint16_t color_bg)
+{
+	drw_circle_raw(x, y, r, frame_size, color, color_bg);
+}
+void drw_menu_bar_top(unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned int line_size, uint16_t color_bar, uint16_t color_line)
+{
+	ILI9341_fillRect(x, y, x + w, y + h, color_bar);
+	ILI9341_fillRect(x, y + h, x + w, y, color_line);
+}
+void drw_menu_bar_bottom(unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned int line_size, uint16_t color_bar, uint16_t color_line)
+{
+	ILI9341_fillRect(x, y, x + w, y + h, color_bar);
+	ILI9341_fillRect(x, y, x + w, y+h, color_line);
+}
+
 //-------------------------------------------------------------------
-void draw_m_frame(uint16_t x, uint16_t y)
+void drw_connection_diagram(uint16_t x, uint16_t y, , uint16_t color, uint16_t color_bg, uint16_t color_text, uint16_t color_text_bg)
 {
-	for (uint16_t i = 0; i <= 2; i++)
+	const uint16_t size = 38;
+	const uint16_t high = 22;
+	const uint8_t number_of_connections = 8;
+	ILI9341_fillRect(x, y, x + DISPLAY_WIDTH - 5, y + high, color_bg);
+	ILI9341_drawLine(x, y, x + DISPLAY_WIDTH - 5, y, color);
+	ILI9341_drawLine(x, y + high, DISPLAY_WIDTH - 5, y + high, color);
+	for (uint8_t i = 0; i < number_of_connections; i++)
 	{
-		ILI9341_drawRect(x - i, y - i, x + 96 + i, y + 23 + i, COLOR_WHITE);
-	} // x len=86px y len=23
-}
-void draw_s_frame(uint16_t x, uint16_t y)
-{
-	for (uint16_t i = 0; i <= 2; i++)
-	{
-		ILI9341_drawRect(x - i, y - i, x + 96 + i, y + 23 + i, COLOR_ORANGE);
-	} // x len=86px y len=23
-}
-void draw_start_button(uint16_t color)
-{
-	ILI9341_fillCircle(x_pos_button_c + 10, y_pos_button_c + 10, 5, color);
-	for (uint8_t i = 0; i < 3; i++)
-		ILI9341_drawCircle(x_pos_button_c + 10, y_pos_button_c + 10, 13 + i,
-						   color);
-}
-//-------------------------------------------------------------------
-void draw_legende(uint16_t y, uint16_t cur_page)
-{
-	uint16_t x = 16;
-	uint16_t color_bar = COLOR_MENU_BAR_DOWN;
-	// uint16_t color_text = COLOR_WHITE;
-	uint16_t color_text1 = COLOR_YELLOW;
-	uint16_t color_text_bg = COLOR_MENU_BAR_DOWN;
-	uint16_t size = 38; // 43
-	uint16_t high = 22;
-	//	uint16_t anim_del = 200;
-	//	uint8_t anim_cy_old = 0;
-	ILI9341_fillRect(0, y, 319, y + high, color_bar);
-	ILI9341_drawLine(0, y, 319, y, COLOR_WHITE);
-	ILI9341_drawLine(0, y + high, 319, y + high, COLOR_WHITE);
-	for (uint16_t i = 0; i <= 310; i += size)
-	{
-		ILI9341_drawLine(x - 10 + i, y, x - 10 + i, y + high, COLOR_WHITE);
+		ILI9341_drawLine(x + i * size, y, x + i * size, y + high, color);
 	}
-
-	switch (cur_page)
-	{
-	case 1: // 0-10v
-			//		for (uint8_t i = 0; i <= anim_cy_old; i++) {
-		ILI9341_printText("   ", x, y + 7, color_text1, color_text_bg, 1);
-		ILI9341_printText("   ", x + size, y + 7, color_text1, color_text_bg,
-						  1);
-		ILI9341_printText("   ", x + size * 2, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("   ", x + size * 3, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("IN1", x + size * 4, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText(" Y ", x + size * 5, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("GND", x + size * 6, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("24V", x + size * 7, y + 7, color_text1,
-						  color_text_bg, 1);
-
-		//			DelayMili(anim_del);
-		//			ILI9341_printText("   ", x, y + 7, color_text, color_text_bg, 1);
-		//			ILI9341_printText("   ", x + size, y + 7, color_text, color_text_bg,
-		//					1);
-		//			ILI9341_printText("   ", x + size * 2, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("   ", x + size * 3, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("IN1", x + size * 4, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText(" Y ", x + size * 5, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("GND", x + size * 6, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("24V", x + size * 7, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			DelayMili(anim_del);
-		//		}
-		break;
-	case 2: // auf/zu
-			//		for (uint8_t i = 0; i <= anim_cy_old; i++) {
-		ILI9341_printText("  ", x, y + 7, color_text1, color_text_bg, 1);
-		ILI9341_printText("  ", x + size, y + 7, color_text1, color_text_bg, 1);
-		ILI9341_printText("  ", x + size * 2, y + 7, color_text1, color_text_bg,
-						  1);
-		ILI9341_printText(" ZU", x + size * 3, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("AUF", x + size * 4, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText(" + ", x + size * 5, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("GND", x + size * 6, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("24V", x + size * 7, y + 7, color_text1,
-						  color_text_bg, 1);
-
-		//			DelayMili(anim_del);
-		//			ILI9341_printText("   ", x, y + 7, color_text, color_text_bg, 1);
-		//			ILI9341_printText("   ", x + size, y + 7, color_text, color_text_bg,
-		//					1);
-		//			ILI9341_printText("ZU ", x + size * 2, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText(" + ", x + size * 3, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("AUF", x + size * 4, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText(" + ", x + size * 5, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("GND", x + size * 6, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("24V", x + size * 7, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			DelayMili(anim_del);
-		//		}
-		break;
-	case 3: // in1
-			//		for (uint8_t i = 0; i <= anim_cy_old; i++) {
-		ILI9341_printText("   ", x, y + 7, color_text1, color_text_bg, 1);
-		ILI9341_printText("   ", x + size, y + 7, color_text1, color_text_bg,
-						  1);
-		ILI9341_printText("   ", x + size * 2, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("   ", x + size * 3, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("IN1", x + size * 4, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("   ", x + size * 5, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("GND", x + size * 6, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("24V", x + size * 7, y + 7, color_text1,
-						  color_text_bg, 1);
-
-		//			DelayMili(anim_del);
-		//			ILI9341_printText("   ", x, y + 7, color_text, color_text_bg, 1);
-		//			ILI9341_printText("   ", x + size, y + 7, color_text, color_text_bg,
-		//					1);
-		//			ILI9341_printText("   ", x + size * 2, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("   ", x + size * 3, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("IN1", x + size * 4, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("   ", x + size * 5, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("GND", x + size * 6, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("24V", x + size * 7, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			DelayMili(anim_del);
-		//		}
-		break;
-
-	case 4: // in1 in2
-			//		for (uint8_t i = 0; i <= anim_cy_old; i++) {
-		ILI9341_printText("   ", x, y + 7, color_text1, color_text_bg, 1);
-		ILI9341_printText("   ", x + size, y + 7, color_text1, color_text_bg,
-						  1);
-		ILI9341_printText("   ", x + size * 2, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("IN2", x + size * 3, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("IN1", x + size * 4, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("   ", x + size * 5, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("GND", x + size * 6, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("24V", x + size * 7, y + 7, color_text1,
-						  color_text_bg, 1);
-
-		//			DelayMili(anim_del);
-		//			ILI9341_printText("   ", x, y + 7, color_text, color_text_bg, 1);
-		//			ILI9341_printText("   ", x + size, y + 7, color_text, color_text_bg,
-		//					1);
-		//			ILI9341_printText("   ", x + size * 2, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("IN2", x + size * 3, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("IN1", x + size * 4, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("   ", x + size * 5, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("GND", x + size * 6, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("24V", x + size * 7, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			DelayMili(anim_del);
-		//		}
-		break;
-	case 5: // regler passiv
-			//		for (uint8_t i = 0; i <= anim_cy_old; i++) {
-		ILI9341_printText("PT+", x, y + 7, color_text1, color_text_bg, 1);
-		ILI9341_printText("PT-", x + size, y + 7, color_text1, color_text_bg,
-						  1);
-		ILI9341_printText("GND", x + size * 2, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("   ", x + size * 3, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("IN1", x + size * 4, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText(" Y ", x + size * 5, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("   ", x + size * 6, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("   ", x + size * 7, y + 7, color_text1,
-						  color_text_bg, 1);
-
-		//			DelayMili(anim_del);
-		//			ILI9341_printText("PT+", x, y + 7, color_text, color_text_bg, 1);
-		//			ILI9341_printText("PT-", x + size, y + 7, color_text, color_text_bg,
-		//					1);
-		//			ILI9341_printText("   ", x + size * 2, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("   ", x + size * 3, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("IN1", x + size * 4, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText(" Y ", x + size * 5, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("GND", x + size * 6, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("   ", x + size * 7, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			DelayMili(anim_del);
-		//		}
-		break;
-	case 6: // pt100
-			//		for (uint8_t i = 0; i <= anim_cy_old; i++) {
-		ILI9341_printText("PT+", x, y + 7, color_text1, color_text_bg, 1);
-		ILI9341_printText("PT-", x + size, y + 7, color_text1, color_text_bg,
-						  1);
-		ILI9341_printText("GND", x + size * 2, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("   ", x + size * 3, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("   ", x + size * 4, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("   ", x + size * 5, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("   ", x + size * 6, y + 7, color_text1,
-						  color_text_bg, 1);
-		ILI9341_printText("   ", x + size * 7, y + 7, color_text1,
-						  color_text_bg, 1);
-
-		//			DelayMili(anim_del);
-		//			ILI9341_printText("PT+", x, y + 7, color_text, color_text_bg, 1);
-		//			ILI9341_printText("PT-", x + size, y + 7, color_text, color_text_bg,
-		//					1);
-		//			ILI9341_printText("   ", x + size * 2, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("   ", x + size * 3, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("   ", x + size * 4, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("   ", x + size * 5, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("GND", x + size * 6, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			ILI9341_printText("   ", x + size * 7, y + 7, color_text,
-		//					color_text_bg, 1);
-		//			DelayMili(anim_del);
-		//		}
-		break;
-	}
+	ILI9341_printText("PT+ PT- GND IN2 IN1 YYY GND 24V " + 3, x, y + 7, color_text, color_text_bg, 1);
 }
 //-------------------------------------------------------------------
 void draw_menu_home()
 {
-	HAL_GPIO_WritePin(GPIOB, V24ON1_Pin, GPIO_PIN_RESET); // 24VINTERN
-	HAL_GPIO_WritePin(GPIOB, V24ON2_Pin, GPIO_PIN_RESET); // 24VOUT
+	power_24v_off();
+	// HAL_GPIO_WritePin(GPIOB, V24ON1_Pin, GPIO_PIN_RESET); // 24VINTERN
+	// HAL_GPIO_WritePin(GPIOB, V24ON2_Pin, GPIO_PIN_RESET); // 24VOUT
 	ILI9341_SetBrightness(1);
 	ILI9341_fill(COLOR_MENU_BG);
-	// top bar
-	ILI9341_fillRect(menu_bar_up);
-	for (uint8_t i = 0; i <= 2; i++)
-		ILI9341_drawLine(0, 39 + i, 319, 39 + i, COLOR_WHITE);
-	// down bar
-	ILI9341_fillRect(menu_bar_down);
-	// Triangle BUTTOM + lines
-	for (uint8_t i = 0; i <= 2; i++)
-		ILI9341_drawLine(0, 198 + i, 319, 198 + i, COLOR_WHITE);
-	for (uint8_t i = 0; i <= 3; i++)
-		ILI9341_drawLine(140 - i, 200, 160 - i, 185, COLOR_WHITE);
-	for (uint8_t i = 0; i <= 3; i++)
-		ILI9341_drawLine(160 + i, 185, 180 + i, 200, COLOR_WHITE);
-	ILI9341_fillTriangle(140, 200, 180, 200, 160, 185, COLOR_MENU_BAR_DOWN);
+	drw_menu_bar_top(LEFT_CORNER_X, TOP_CORNER_Y, 320, 30, 3, COLOR_MENU_BAR, COLOR_WHITE);
+	drw_menu_bar_bottom(LEFT_CORNER_X, 200, 320, 30, 3, COLOR_MENU_BAR, COLOR_WHITE);
+
 
 	select_main_menu(page_main_menu);
-	draw_start_button(COLOR_WHITE);
+	drw_btn_round(unsigned int x, unsigned int y, unsigned int r, unsigned int frame_size, COLOR_WHITE, COLOR_MENU_BAR);
 
 	read_adc_battery(x_pos_batt, y_pos_batt - 25);
 	ILI9341_drawBitmapFastBar(15, 10, mcu_20x20, 20, 20, COLOR_YELLOW,
