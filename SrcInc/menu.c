@@ -48,8 +48,6 @@ uint8_t page_info_menu = 1;
 
 //-------------------------------------------------------------------GUI Menu
 //-------------------------------------------------------------------Val
-uint16_t valOld = 0;
-uint16_t delay_menus = 500;
 
 #define text_menu_size &Font16
 #define menu_bar_up 0, 0, 319, 39, COLOR_MENU_BAR_DOWN
@@ -69,7 +67,7 @@ void drw_circle_raw(unsigned int x, unsigned int y, unsigned int r, unsigned int
 	}
 }
 void drw_frame_raw(unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned int frame_size, uint16_t color, uint16_t color_bg)
-{
+ {
 	ILI9341_fillRect(x, y, x + w, y + h, color_bg);
 
 	for (uint8_t i = frame_size; i == 0; i--)
@@ -132,10 +130,6 @@ void drw_btn_text_small(int16_t x, int16_t y, uint16_t color, uint16_t color_bg,
 {
 	drw_btn_char(x, y, BTN_WIDTH_SMALL, BTN_HEIGHT_SMALL, 4, color, color_bg, text, 2, color_text, color_text_bg);
 }
-void drw_frame_medium(unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned int frame_size, uint16_t color, uint16_t color_bg)
-{
-	drw_frame_raw(x, y, FRAME_WIDTH_MEDIUM, FRAME_HEIGHT_MEDIUM, frame_size, color, color_bg);
-}
 void drw_btn_round(unsigned int x, unsigned int y, unsigned int r, unsigned int frame_size, uint16_t color, uint16_t color_bg)
 {
 	drw_circle_raw(x, y, r, frame_size, color, color_bg);
@@ -150,7 +144,6 @@ void drw_menu_bar_bottom(unsigned int x, unsigned int y, unsigned int w, unsigne
 	ILI9341_fillRect(x, y, x + w, y + h, color_bar);
 	ILI9341_fillRect(x, y, x + w, y + h, color_line);
 }
-
 //-------------------------------------------------------------------
 void drw_connection_diagram(uint16_t x, uint16_t y, , uint16_t color, uint16_t color_bg, uint16_t color_text, uint16_t color_text_bg)
 {
@@ -167,33 +160,6 @@ void drw_connection_diagram(uint16_t x, uint16_t y, , uint16_t color, uint16_t c
 	ILI9341_printText("PT+ PT- GND IN2 IN1 YYY GND 24V " + 3, x, y + 7, color_text, color_text_bg, 1);
 }
 //-------------------------------------------------------------------
-
-void enable_24V_intern()
-{
-	HAL_GPIO_WritePin(GPIOB, V24ON1_Pin, GPIO_PIN_SET); // 24VINTERN
-}
-void enable_24V_extern()
-{
-	HAL_GPIO_WritePin(GPIOB, V24ON2_Pin, GPIO_PIN_SET); // 24VOUT
-}
-void disable_24V_intern()
-{
-	HAL_GPIO_WritePin(GPIOB, V24ON1_Pin, GPIO_PIN_RESET); // 24VINTERN
-}
-void disable_24V_extern()
-{
-	HAL_GPIO_WritePin(GPIOB, V24ON2_Pin, GPIO_PIN_RESET); // 24VOUT
-}
-void power_24v_off()
-{
-	disable_24V_intern();
-	disable_24V_extern();
-}
-void power_24v_on()
-{
-	enable_24V_intern();
-	enable_24V_extern();
-}
 void drw_menu_main_bg(){
 	
 }
@@ -282,17 +248,9 @@ void draw_menu_antrieb_s()
 	for (uint8_t i = 0; i < 2; i++)
 		ILI9341_string((xsta + xlen * 2) - 25, 28, "S1", COLOR_WHITE,
 					   COLOR_MENU_BG);
-
 	draw_legende(3, 2);
 	draw_start_button(COLOR_WHITE);
 	read_adc_battery(x_pos_batt, y_pos_batt);
-
-	for (uint8_t i = 1; i < standart_helligkeit; i++)
-	{
-		DelayMili(10);
-		ILI9341_SetBrightness(i);
-	}
-	DelayMili(delay_menus);
 }
 //----------------------------------------------------
 void draw_menu_sensor()
@@ -485,7 +443,6 @@ void draw_infoMenu1()
 	//	}
 	DelayMili(delay_menus);
 }
-
 //-------------------------------------------------------------------
 void draw_menu_tools()
 {
@@ -559,7 +516,7 @@ void drw_menu_pic(const uint8_t current_page)
 		drw_menu_segment("   SENSORS  ", info_66x66, sensors_80x80, pt100_66x66);
 		break;
 	case SENSOR_MENU_PT100:
-		drw_menu_segment("   PT100    ", sensor_66x66, pt100_80x80, actor_010V_66x66);
+		drw_menu_segment("   PT100    ", sensors_66x66, pt100_80x80, actor_010V_66x66);
 		break;
 	case ACTOR_MENU_010V:
 		drw_menu_segment("ACTORS 0-10V", pt100_66x66, actor_010V_80x80, actor_oc_66x66);
